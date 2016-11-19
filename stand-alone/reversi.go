@@ -71,7 +71,7 @@ func Check(chessboard[LENGTH][LENGTH] int8, role int8) (step int8, canDown [LENG
     var self_color, opponent_color int8
 
     //确定本方和对方颜色
-    self_color, opponent_color = row, -1*role
+    self_color, opponent_color = role, -1*role
 
     //遍历分析棋盘所有为空的位置，分析是否符合落子的条件
     for row =0; row<LENGTH; row++ {
@@ -135,7 +135,7 @@ func PlacePiece(chessboard *[LENGTH][LENGTH] int8, row, col, role int8) {
     var self_color, opponent_color int8
 
     //确定本方和对方颜色
-    self_color, opponent_color = row, -1*role
+    self_color, opponent_color = role, -1*role
 
     chessboard[row][col] = self_color; //本方落子
 
@@ -190,7 +190,7 @@ func GetScore(chessboard[LENGTH][LENGTH] int8, role int8) (score int8){
     var self_color, opponent_color int8
 
     //确定本方和对方颜色
-    self_color, opponent_color = row, -1*role
+    self_color, opponent_color = role, -1*role
 
     //遍历分析棋盘所有位置
     for row =0; row<LENGTH; row++ {
@@ -204,12 +204,14 @@ func GetScore(chessboard[LENGTH][LENGTH] int8, role int8) (score int8){
     return
 }
 
-//查找最佳最佳下子位置
+//分析所有落子方案，返回最高的一种得分
 //参数：
 //  chessboard -- 棋盘格局：1白色 -1黑色  0无子
 //  canDown    -- 可以落子的位置
 //  role       -- 1表示分析白子得分 -1表示分析黑子得分
-func FindBestPlay(chessboard [LENGTH][LENGTH] int8, canDown [LENGTH][LENGTH] bool, role int8) (maxScore int8) {
+//返回值：
+//  最优方案的得分
+func FindBestPlayScore(chessboard [LENGTH][LENGTH] int8, canDown [LENGTH][LENGTH] bool, role int8) (maxScore int8) {
     var row, col, i, j, score int8
 
     var chessboard_tmp [LENGTH][LENGTH] int8
@@ -239,6 +241,61 @@ func FindBestPlay(chessboard [LENGTH][LENGTH] int8, canDown [LENGTH][LENGTH] boo
     }
     return
 }
+
+//AI落子
+//参数：
+//  chessboard -- 棋盘格局：1白色 -1黑色  0无子
+//  canDown    -- 可以落子的位置
+//  role       -- 1表示分析白子落子 -1表示分析黑子落子
+//
+//核心思想：
+// 假设敌方理性落子为前提，穷举本方落子所有可能后，敌方所有的落子可能性的最大值，得到一种对方最差的最大值，即Min-Max算法
+func AiPlayStep(chessboard *[LENGTH][LENGTH] int8, canDown [LENGTH][LENGTH] bool, role int8) {
+    var row, col, row_best, col_best, i, j, score, min_score int8
+
+    var chessboard_snap [LENGTH][LENGTH] int8 //棋盘镜像
+    //var canDown_snap [LENGTH][LENGTH] bool   //可落子镜像
+
+    //确定本方和对方颜色
+    self_color, opponent_color := role, -1*role
+    min_score = 127 //敌方落子的最差的最大值
+
+    //遍历分析棋盘所有位置
+    for row =0; row<LENGTH; row++ {
+        for col = 0; col < LENGTH; col++ {
+            //略过不可落子的位置
+            if !canDown[row][col] {
+                continue
+            }
+
+            //复制棋盘
+            for i =0; i<LENGTH; i++ {
+                for j = 0; j < LENGTH; j++ {
+                    chessboard_snap[i][j] = chessboard[i][j]
+                }
+            }
+
+            //试着在镜像棋盘中的一个位子下子
+            PlacePiece(&chessboard_snap, row, col, self_color);
+
+            //检查对手是否有地方可下子
+            _, canDown_snap := Check(chessboard_snap, opponent_color);
+
+            //获得临时棋盘中对方下子的得分情况
+            score = FindBestPlayScore(chessboard_snap, canDown_snap, opponent_color);
+
+            //保存对方得分最低的下法
+            if score < min_score {
+                min_score = score;
+                row_best = row;
+                col_best = col;
+            }
+        }
+    }
+    //按上面计算出的最优解，AI最终落子
+    PlacePiece(&chessboard, row_best, col_best, self_color)
+}
+
 
 
 func main() {
