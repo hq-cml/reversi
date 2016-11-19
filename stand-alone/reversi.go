@@ -127,7 +127,6 @@ func Check(chessboard[LENGTH][LENGTH] int8, role int8) (step int8, canDown [LENG
 //  chessboard -- 棋盘格局：1白色 -1黑色  0无子
 //  row, col   -- 行列
 //  role       -- 1表示为落白子 -1表示落黑子
-//
 func PlacePiece(chessboard[LENGTH][LENGTH] int8, row, col, role int8) {
     var row_delta, col_delta, row, col, x, y int8
     var self_color, opponent_color int8
@@ -178,6 +177,31 @@ func PlacePiece(chessboard[LENGTH][LENGTH] int8, row, col, role int8) {
         }
     }
 }
+
+//分析当前棋局，获得指定方的得分
+//参数：
+//  chessboard -- 棋盘格局：1白色 -1黑色  0无子
+//  role       -- 1表示分析白子得分 -1表示分析黑子得分
+func GetScore(chessboard[LENGTH][LENGTH] int8, role int8) {
+    var score, row, col int8
+    var self_color, opponent_color int8
+
+    //确定本方和对方颜色
+    self_color, opponent_color = row, -1*role
+
+    //遍历分析棋盘所有位置
+    for row =0; row<LENGTH; row++ {
+        for col = 0; col < LENGTH; col++ {
+            //若棋盘对应位置是对手下的棋子，从总分中减1
+            score -= chessboard[row][col] == opponent_color
+            //若棋盘对应位置是我方的棋子，总分中加1分
+            score += chessboard[row][col] == self_color
+        }
+    }
+}
+
+
+
 
 func main() {
     var chessboard [8][8] int8
