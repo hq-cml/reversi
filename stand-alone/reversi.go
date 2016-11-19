@@ -13,7 +13,7 @@ const (
 )
 
 //输出棋盘
-func printChessboard(chessboard [LENGTH][LENGTH] int8) {
+func PrintChessboard(chessboard [LENGTH][LENGTH] int8) {
     var row, col int
     fmt.Printf("\n  ")
 
@@ -62,7 +62,7 @@ func printChessboard(chessboard [LENGTH][LENGTH] int8) {
     fmt.Printf("---┘\n");
 }
 
-//分析棋牌，某一方是否还有哪些落子的地方
+//分析棋盘，某一方是否还有哪些落子的地方
 //参数：
 //  chessboard -- 棋盘格局：1白色 -1黑色  0无子
 //  role       -- 1表示为白子分析当前情况 -1表示为黑子分析当前情况
@@ -78,26 +78,27 @@ func CheckChessboard(chessboard[LENGTH][LENGTH] int8, role int8) (step int8, can
     self_color, opponent_color = role, -1*role
 
     //遍历分析棋盘所有为空的位置，分析是否符合落子的条件
-    for row =0; row<LENGTH; row++ {
-        for col =0; col<LENGTH; col++ {
+    for row =0; row < LENGTH; row++ {
+        for col =0; col < LENGTH; col++ {
             //跳过已经落子的位置
             if chessboard[row][col] != 0 {
                 continue
             }
 
             //检查当前位置的周围8个方向（如果在边角上，则需要略过）
-            for row_delta = -1; row_delta <=-1; row_delta++ {
-                for col_delta = -1; col_delta <=-1; col_delta++ {
+            for row_delta = -1; row_delta <=1; row_delta++ {
+                for col_delta = -1; col_delta <=1; col_delta++ {
                     //忽略当前子和越界子（边角上）
                     if row+row_delta<0 || row+row_delta>=LENGTH || col+col_delta<0 || col+col_delta>=LENGTH || (row_delta == 0 && col_delta == 0) {
                         continue
                     }
 
-                    //若(row,col)四周有对手下的子，即沿着这个方向一致追查是否有本方落子
+                    //若(row,col)四周有对手下的子，即沿着这个方向一直追查是否有本方落子
                     //如果能够找到，说明当前位置是可以落子的，即对地方进行了合围
                     if chessboard[row+row_delta][col+col_delta] == opponent_color {
+                        //fmt.Println(row, col, row_delta,  col_delta)
                         //以对手落子为起点
-                        x, y = row+row_delta, col_delta
+                        x, y = row+row_delta, col+col_delta
                         //沿着这个方向一直找
                         for {
                             x += row_delta
@@ -144,18 +145,18 @@ func PlacePiece(chessboard *[LENGTH][LENGTH] int8, row, col, role int8) {
     chessboard[row][col] = self_color; //本方落子
 
     //检查当前位置的周围8个方向（如果在边角上，则需要略过）
-    for row_delta = -1; row_delta <=-1; row_delta++ {
-        for col_delta = -1; col_delta <= -1; col_delta++ {
+    for row_delta = -1; row_delta <= 1; row_delta++ {
+        for col_delta = -1; col_delta <= 1; col_delta++ {
             //忽略当前子和越界子（边角上）
             if row+row_delta<0 || row+row_delta>=LENGTH || col+col_delta<0 || col+col_delta>=LENGTH || (row_delta == 0 && col_delta == 0) {
                 continue
             }
 
-            //若(row,col)四周有对手下的子，即沿着这个方向一致追查是否有本方落子
+            //若(row,col)四周有对手下的子，即沿着这个方向一直追查是否有本方落子
             //如果能够找到，则将这中间所有的敌方棋子置换成本方棋子
             if chessboard[row+row_delta][col+col_delta] == opponent_color {
                 //以对手落子为起点
-                x, y = row+row_delta, col_delta
+                x, y = row+row_delta, col+col_delta
                 //沿着这个方向一直找
                 for {
                     x += row_delta
@@ -258,8 +259,8 @@ func FindBestPlayScore(chessboard [LENGTH][LENGTH] int8, canDown [LENGTH][LENGTH
 //
 //核心思想：
 // 假设敌方理性落子为前提，穷举本方落子所有可能后，敌方所有的落子可能性的最大值，得到一种对方最差的最大值，即Min-Max算法
-func AiPlayStep(chessboard *[LENGTH][LENGTH] int8, canDown [LENGTH][LENGTH] bool, role int8) {
-    var row, col, row_best, col_best, i, j, score, min_score int8
+func AiPlayStep(chessboard *[LENGTH][LENGTH] int8, canDown [LENGTH][LENGTH] bool, role int8) (row_best, col_best int8){
+    var row, col, i, j, score, min_score int8
 
     var chessboard_snap [LENGTH][LENGTH] int8 //棋盘镜像
     //var canDown_snap [LENGTH][LENGTH] bool   //可落子镜像
@@ -302,6 +303,7 @@ func AiPlayStep(chessboard *[LENGTH][LENGTH] int8, canDown [LENGTH][LENGTH] bool
     }
     //按上面计算出的最优解，AI最终落子
     PlacePiece(chessboard, row_best, col_best, self_color)
+    return
 }
 
 //初始化棋盘：
@@ -322,22 +324,30 @@ func InitChessboard(chessboard *[8][8] int8) int {
     return 4;
 }
 
+//等待用户按任意键，用于阻塞程序
+func waitUser() {
+    r := bufio.NewReader(os.Stdin)
+    _, _, _ = r.ReadLine()
+}
+
 //单机版人机对战
 func main() {
-    //var row, col, x, y int8
+    var row, col int8
     var chessboard [8][8] int8 //棋盘
-    //var cnt int8 //已落子的个数
-    //var SkipPlay int8 //当某一方无子可落时，增1，若为2，表示双方都不能落子
-    var role int8 //本方颜色：1白色 -1黑色
+    var cnt int8 //已落子的个数
+    var skip_play int8 //当某一方无子可落时，增1，若为2，表示双方都不能落子
+    var user_role int8 //玩家颜色：1白色 -1黑色
+    var ai_role int8 //玩家颜色：1白色 -1黑色
+    var turn int8 //当前轮到哪一方落子
     r := bufio.NewReader(os.Stdin)
 
-    fmt.Println("\n~黑白棋小程序--人机对战AI版~\n")
-    fmt.Println("初始棋盘:")
+    fmt.Println("\n    ~黑白棋小程序--人机对战AI版~\n")
+    fmt.Println("   初始棋盘:")
 
     //初始化棋盘
     _ = InitChessboard(&chessboard)
     //打印棋盘
-    printChessboard(chessboard)
+    PrintChessboard(chessboard)
 
     //人机交互
     fmt.Print("\n游戏者执黑先下，输入 0-黑子 1-白子，请选择：")
@@ -345,16 +355,87 @@ func main() {
     line := string(rawLine)
     if line == "0" {
         fmt.Println("您执黑先行！")
-        role = -1
+        user_role = BLACK
     }else if line == "1" {
-        fmt.Println("您执白后行！")
-        role = 1
+        fmt.Print("您执白后行！，请按任意键，AI落子：")
+        waitUser()
+        user_role = WIITE
     }else{
         fmt.Println("输入非法，程序退出！")
         os.Exit(1)
     }
 
+    ai_role = user_role * -1 //ai颜色赋值
+    turn = BLACK             //黑子先行
 
-    _ = role
+    //无限循环，轮流落子，直到分出胜负
+    for {
+        //如果本轮是黑子（白子），且玩家执黑子（白子），则玩家落子
+        if (turn == BLACK && user_role == BLACK) || (turn == WIITE && user_role == WIITE) {
+            //玩家落子
+            //首先查看是否可落子
+            //fmt.Println(chessboard)
+            //fmt.Println(user_role)
+            step , canDown := CheckChessboard(chessboard, user_role)
+            if step == 0 {
+                //无子可落
+                skip_play ++
+                if skip_play == 1 {
+                    fmt.Print("你目前没有位置可落子，按回车键让对方下子。")
+                    waitUser()
+                }else if skip_play == 2 {
+                    fmt.Print("双方均没有可落棋子，按回车键游戏结束")
+                    break
+                }
+            } else {
+                //玩家落子，无限循环等待玩家落下合法子
+                for {
+                    fmt.Print("输入落子的位置(行 列):");
+                    line, _, _ := r.ReadLine()
+                    row = int8(line[0] - byte('1'))
+                    if line[1] >= byte('a') {
+                        col = int8(line[1] - byte('a'))
+                    } else {
+                        col =int8( line[1] - byte('A'))
+                    }
+                    //fmt.Println(x, y, len(line))
+                    if row >=0 && row <LENGTH && col >=0 && col <LENGTH && canDown[row][col] && len(line) == 2 {
+                       PlacePiece(&chessboard, row, col, user_role) //落子
+                        cnt++  //总落子数增加
+                        skip_play = 0 //无法落子次数清0
+                        break
+                    }else{
+                        fmt.Println("坐标输入错误，请重新输入~");
+                    }
+                }
+                //fmt.Println(chessboard)
+                PrintChessboard(chessboard)
+            }
 
+        } else {
+            //AI落子
+            //首先查看是否可落子
+            step , canDown := CheckChessboard(chessboard, ai_role)
+            if step == 0 {
+                //无子可落
+                skip_play ++
+                if skip_play == 1 {
+                    fmt.Print("AI目前没有位置可落子，请玩家落子。")
+                }else if skip_play == 2 {
+                    fmt.Print("双方均没有可落棋子，按回车键游戏结束")
+                    break
+                }
+            } else {
+                //Ai落子
+                x, y := AiPlayStep(&chessboard, canDown, ai_role)
+                skip_play = 0 //无法落子次数清0
+                cnt++
+                //fmt.Println(chessboard)
+                fmt.Println("\nAI落子(",x+1,",",string(byte(y)+byte('A')),")后：")
+                PrintChessboard(chessboard)
+            }
+        }
+
+        turn *= -1 //下一轮反转
+    }
 }
