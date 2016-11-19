@@ -112,7 +112,6 @@ func Check(chessboard[LENGTH][LENGTH] int8, role int8) (step int8, canDown [LENG
                                 step ++
                                 break
                             }
-
                         }
                     }
                 }
@@ -123,6 +122,62 @@ func Check(chessboard[LENGTH][LENGTH] int8, role int8) (step int8, canDown [LENG
     return step, canDown
 }
 
+//指定位置落子
+//参数：
+//  chessboard -- 棋盘格局：1白色 -1黑色  0无子
+//  row, col   -- 行列
+//  role       -- 1表示为落白子 -1表示落黑子
+//
+func PlacePiece(chessboard[LENGTH][LENGTH] int8, row, col, role int8) {
+    var row_delta, col_delta, row, col, x, y int8
+    var self_color, opponent_color int8
+
+    //确定本方和对方颜色
+    self_color, opponent_color = row, -1*role
+
+    chessboard[row][col] = self_color; //本方落子
+
+    //检查当前位置的周围8个方向（如果在边角上，则需要略过）
+    for row_delta = -1; row_delta <=-1; row_delta++ {
+        for col_delta = -1; col_delta <= -1; col_delta++ {
+            //忽略当前子和越界子（边角上）
+            if row+row_delta<0 || row+row_delta>=LENGTH || col+col_delta<0 || col+col_delta>=LENGTH || (row_delta == 0 && col_delta == 0) {
+                continue
+            }
+
+            //若(row,col)四周有对手下的子，即沿着这个方向一致追查是否有本方落子
+            //如果能够找到，则将这中间所有的敌方棋子置换成本方棋子
+            if chessboard[row+row_delta][col+col_delta] == opponent_color {
+                //以对手落子为起点
+                x, y = row+row_delta, col_delta
+                //沿着这个方向一直找
+                for {
+                    x += row_delta
+                    y += col_delta
+                    //若越界跳出循环
+                    if x<0 || x>=LENGTH || y <0 || y>=LENGTH {
+                        break
+                    }
+                    //如果找到了空位置，则也说明无法落子了
+                    if chessboard[x][y] == 0 {
+                        break
+                    }
+                    //如果找到了本方棋子，则说明可以置换
+                    if chessboard[x][y] == self_color {
+                        x-=row_delta
+                        y-=col_delta
+                        for chessboard[x][y] == opponent_color {
+                            chessboard[x][y] = self_color //置换
+                            x-=row_delta
+                            y-=col_delta
+                        }
+                        break
+                    }
+                }
+            }
+        }
+    }
+}
 
 func main() {
     var chessboard [8][8] int8
