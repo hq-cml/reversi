@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+    "fmt"
+    "bufio"
+    "os"
+)
 
 const (
     LENGTH = 8 //棋盘长宽
@@ -58,7 +62,7 @@ func printChessboard(chessboard [LENGTH][LENGTH] int8) {
     fmt.Printf("---┘\n");
 }
 
-//检索棋牌，某一方是否还有哪些下子的地方
+//分析棋牌，某一方是否还有哪些落子的地方
 //参数：
 //  chessboard -- 棋盘格局：1白色 -1黑色  0无子
 //  role       -- 1表示为白子分析当前情况 -1表示为黑子分析当前情况
@@ -66,7 +70,7 @@ func printChessboard(chessboard [LENGTH][LENGTH] int8) {
 //返回值:
 // setp        -- 可下子的位置的个数
 // canDown     -- 可下子的位置
-func Check(chessboard[LENGTH][LENGTH] int8, role int8) (step int8, canDown [LENGTH][LENGTH] bool) {
+func CheckChessboard(chessboard[LENGTH][LENGTH] int8, role int8) (step int8, canDown [LENGTH][LENGTH] bool) {
     var row_delta, col_delta, row, col, x, y int8
     var self_color, opponent_color int8
 
@@ -131,7 +135,7 @@ func Check(chessboard[LENGTH][LENGTH] int8, role int8) (step int8, canDown [LENG
 //注意：
 //golang中数字是值属性，所以要改变内容必须传入指针!
 func PlacePiece(chessboard *[LENGTH][LENGTH] int8, row, col, role int8) {
-    var row_delta, col_delta, row, col, x, y int8
+    var row_delta, col_delta, x, y int8
     var self_color, opponent_color int8
 
     //确定本方和对方颜色
@@ -196,9 +200,13 @@ func GetScore(chessboard[LENGTH][LENGTH] int8, role int8) (score int8){
     for row =0; row<LENGTH; row++ {
         for col = 0; col < LENGTH; col++ {
             //若棋盘对应位置是对手下的棋子，从总分中减1
-            score -= chessboard[row][col] == opponent_color
-            //若棋盘对应位置是我方的棋子，总分中加1分
-            score += chessboard[row][col] == self_color
+            if chessboard[row][col] == opponent_color {
+                score -= 1
+            }
+
+            if chessboard[row][col] == self_color {
+                score += 1
+            }
         }
     }
     return
@@ -279,7 +287,7 @@ func AiPlayStep(chessboard *[LENGTH][LENGTH] int8, canDown [LENGTH][LENGTH] bool
             PlacePiece(&chessboard_snap, row, col, self_color);
 
             //检查对手是否有地方可下子
-            _, canDown_snap := Check(chessboard_snap, opponent_color);
+            _, canDown_snap := CheckChessboard(chessboard_snap, opponent_color);
 
             //获得临时棋盘中对方下子的得分情况
             score = FindBestPlayScore(chessboard_snap, canDown_snap, opponent_color);
@@ -293,12 +301,60 @@ func AiPlayStep(chessboard *[LENGTH][LENGTH] int8, canDown [LENGTH][LENGTH] bool
         }
     }
     //按上面计算出的最优解，AI最终落子
-    PlacePiece(&chessboard, row_best, col_best, self_color)
+    PlacePiece(chessboard, row_best, col_best, self_color)
 }
 
+//初始化棋盘：
+//棋盘坐标：
+//  左上角 -- row=0，col=0
+//  右上角 -- row=0，col=7
+//  左下角 -- row=7，col=0
+//  右上角 -- row=7，col=7
+func InitChessboard(chessboard *[8][8] int8) int {
+    //在棋盘中间位置放置白棋
+    chessboard[3][3] = WIITE;
+    chessboard[4][4] = WIITE;
 
+    //在棋盘中间位置放置黑棋
+    chessboard[3][4] = BLACK;
+    chessboard[4][3] = BLACK;
 
+    return 4;
+}
+
+//单机版人机对战
 func main() {
-    var chessboard [8][8] int8
+    //var row, col, x, y int8
+    var chessboard [8][8] int8 //棋盘
+    //var cnt int8 //已落子的个数
+    //var SkipPlay int8 //当某一方无子可落时，增1，若为2，表示双方都不能落子
+    var role int8 //本方颜色：1白色 -1黑色
+    r := bufio.NewReader(os.Stdin)
+
+    fmt.Println("\n~黑白棋小程序--人机对战AI版~\n")
+    fmt.Println("初始棋盘:")
+
+    //初始化棋盘
+    _ = InitChessboard(&chessboard)
+    //打印棋盘
     printChessboard(chessboard)
+
+    //人机交互
+    fmt.Print("\n游戏者执黑先下，输入 0-黑子 1-白子，请选择：")
+    rawLine, _, _ := r.ReadLine()
+    line := string(rawLine)
+    if line == "0" {
+        fmt.Println("您执黑先行！")
+        role = -1
+    }else if line == "1" {
+        fmt.Println("您执白后行！")
+        role = 1
+    }else{
+        fmt.Println("输入非法，程序退出！")
+        os.Exit(1)
+    }
+
+
+    _ = role
+
 }
