@@ -66,7 +66,7 @@ func printChessboard(chessboard [LENGTH][LENGTH] int8) {
 //返回值:
 // setp        -- 可下子的位置的个数
 // canDown     -- 可下子的位置
-func Check(chessboard[LENGTH][LENGTH] int8, role int8) (step int8, canDown [LENGTH][LENGTH] int8) {
+func Check(chessboard[LENGTH][LENGTH] int8, role int8) (step int8, canDown [LENGTH][LENGTH] bool) {
     var row_delta, col_delta, row, col, x, y int8
     var self_color, opponent_color int8
 
@@ -108,7 +108,7 @@ func Check(chessboard[LENGTH][LENGTH] int8, role int8) (step int8, canDown [LENG
                             }
                             //如果找到了本方棋子，则说明可以形成合围
                             if chessboard[x][y] == self_color {
-                                canDown[row][col] = 1
+                                canDown[row][col] = true
                                 step ++
                                 break
                             }
@@ -127,7 +127,10 @@ func Check(chessboard[LENGTH][LENGTH] int8, role int8) (step int8, canDown [LENG
 //  chessboard -- 棋盘格局：1白色 -1黑色  0无子
 //  row, col   -- 行列
 //  role       -- 1表示为落白子 -1表示落黑子
-func PlacePiece(chessboard[LENGTH][LENGTH] int8, row, col, role int8) {
+//
+//注意：
+//golang中数字是值属性，所以要改变内容必须传入指针!
+func PlacePiece(chessboard *[LENGTH][LENGTH] int8, row, col, role int8) {
     var row_delta, col_delta, row, col, x, y int8
     var self_color, opponent_color int8
 
@@ -182,8 +185,8 @@ func PlacePiece(chessboard[LENGTH][LENGTH] int8, row, col, role int8) {
 //参数：
 //  chessboard -- 棋盘格局：1白色 -1黑色  0无子
 //  role       -- 1表示分析白子得分 -1表示分析黑子得分
-func GetScore(chessboard[LENGTH][LENGTH] int8, role int8) {
-    var score, row, col int8
+func GetScore(chessboard[LENGTH][LENGTH] int8, role int8) (score int8){
+    var row, col int8
     var self_color, opponent_color int8
 
     //确定本方和对方颜色
@@ -198,9 +201,44 @@ func GetScore(chessboard[LENGTH][LENGTH] int8, role int8) {
             score += chessboard[row][col] == self_color
         }
     }
+    return
 }
 
+//查找最佳最佳下子位置
+//参数：
+//  chessboard -- 棋盘格局：1白色 -1黑色  0无子
+//  canDown    -- 可以落子的位置
+//  role       -- 1表示分析白子得分 -1表示分析黑子得分
+func FindBestPlay(chessboard [LENGTH][LENGTH] int8, canDown [LENGTH][LENGTH] bool, role int8) (maxScore int8) {
+    var row, col, i, j, score int8
 
+    var chessboard_tmp [LENGTH][LENGTH] int8
+
+    //遍历分析棋盘所有位置
+    for row =0; row<LENGTH; row++ {
+        for col = 0; col < LENGTH; col++ {
+            //略过不可落子的位置
+            if !canDown[row][col] {
+                continue
+            }
+
+            //复制棋盘
+            for i =0; i<LENGTH; i++ {
+                for j = 0; j < LENGTH; j++ {
+                    chessboard_tmp[i][j] = chessboard[i][j]
+                }
+            }
+
+            //在镜像棋盘中落子，然后求出这种方案的得分
+            PlacePiece(&chessboard_tmp, row, col, role)
+            score = GetScore(chessboard_tmp, role)
+            if maxScore < score {
+                maxScore = score
+            }
+        }
+    }
+    return
+}
 
 
 func main() {
