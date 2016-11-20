@@ -9,11 +9,14 @@ import (
     "sync"
     "runtime"
     . "github.com/hq-cml/reversi"
+    //"github.com/hq-cml/reversi/ai"
+    "github.com/hq-cml/reversi/ai"
+    //"time"
 )
 
 var ip *string = flag.String("h", "127.0.0.1", "ip")
 var port *int = flag.Int("p", 9527, "port")
-var ai *ai = flag.Int("a", 0, "port")       //0-手动模式 1-AI自动模式
+var mode *int = flag.Int("a", 0, "AI")       //0-手动模式 1-AI自动模式
 
 func checkError(err error) {
     if err != nil {
@@ -27,7 +30,7 @@ func main() {
     //解析参数
     flag.Parse()
     if ip != nil {
-        fmt.Println("ip =", *ip, ", port =", *port)
+        fmt.Println("ip =", *ip, ", port =", *port, ", AI=", *mode)
     }
 
     //提示输出
@@ -42,18 +45,71 @@ quit -- quit
     conn, err := net.Dial("tcp", address)
     checkError(err)
 
-
-    user_input := make(chan byte)
-
     var wg sync.WaitGroup
-    go net_in(conn, user_input);
-    //wg.Add(1);
-    go std_in(conn, user_input);
-    wg.Add(2);
 
-    //开始
-    user_input <- byte('c')
+    if *mode == 0 {
+        //手动模式
+        user_input := make(chan byte)
+        go net_in(conn, user_input);
+        //wg.Add(1);
+        go std_in(conn, user_input);
+        wg.Add(2);
+        //开始
+        user_input <- byte('c')
+    } else {
+        //AI自动模式
+        go ai_auto(conn);
+        wg.Add(1);
+    }
+
     wg.Wait();
+}
+
+//AI自动处理
+func ai_auto(conn net.Conn) {
+    cmd := "Nhq" //姓名hq
+    role := BLACK
+
+    //报上姓名
+    _, e := conn.Write([]byte(cmd))
+    checkError(e)
+
+    //循环处理
+    for {
+        //网络
+        buf := make([]byte, 128)
+        n, e := conn.Read(buf)
+        checkError(e)
+
+        if string(buf[0:2]) == "U1" {
+            fmt.Println("AI：黑子")
+            role = BLACK
+        }else if string(buf[0:2]) == "U0" {
+            fmt.Println("AI：白子")
+            role = WIITE
+        }
+
+        do, chess := handler_net_data(buf, n)
+        if do {
+            //handler_net_data返回true，说明本方需要落子，调用AI落子
+            chessBoard := converBytesToChessBoard([]byte(chess))
+            //首先查看是否可落子
+            step , canDown := ai.CheckChessboard(chessBoard, int8(role))
+            if step == 0 {
+                fmt.Println("目前没有位置可落子，按任意键请对方落子。")
+                //TODO 退出？
+                waitUser()
+            } else {
+                //Ai落子
+                row, col := ai.AiPlayStep(chessBoard, canDown, int8(role))
+                cmd := convertRowColToServerProtocal(row, col)
+                fmt.Printf("AI(%d)落子：%d,%d, cmd:%s\n", role, row, col, cmd)
+                _, e := conn.Write([]byte(cmd))
+                checkError(e)
+            }
+        }
+        //time.Sleep(time.Second * 5)
+    }
 }
 
 //接收网络输入
@@ -65,9 +121,12 @@ func net_in(conn net.Conn, user_input chan byte) {
         n, e := conn.Read(buf)
         checkError(e)
 
-        if handler_net_data(buf, n) {
+        do, _ := handler_net_data(buf, n)
+        if do {
+            //handler_net_data返回true，说明本方需要落子，通知显示提示符
             user_input <- byte('c')
         }
+
         //runtime.Gosched()
     }
     os.Exit(0)
@@ -87,7 +146,7 @@ func std_in(conn net.Conn, user_input chan byte) {
             break
         }
 
-        //将用户指令转化成Server指令
+        //将用户输入指令转化成Server指令
         cmd := convertPlaceToServerProtocal(line)
 
         _, e := conn.Write([]byte(cmd))
@@ -98,75 +157,56 @@ func std_in(conn net.Conn, user_input chan byte) {
     os.Exit(0)
 }
 
-//返回true表示轮到己方,展现cmd提示符
-//返回false表示继续等待网络数据,cmd提示符收起
-func handler_net_data(buf []byte, length int) bool{
+//返回true表示轮到己方,展现cmd提示符或者AI自动分析落子
+//返回false表示继续等待网络数据
+func handler_net_data(buf []byte, length int)  (bool, string){
     if length == 3 && string(buf[0:2]) == "U1" {
         fmt.Println("Got->",string(buf[0:length-1]), ". [ You are first(BLACK). ]")
-        return false
+        return false, string(buf[0:length-1])
     }
     if length == 3 && string(buf[0:2]) == "U0" {
         fmt.Println("Got->",string(buf[0:length-1]), ". [ You are second(WHITE). ]")
-        return false
+        return false, string(buf[0:length-1])
     }
     if length == 3 && string(buf[0:2]) == "W1" {
         fmt.Println("Got->",string(buf[0:length-1]), ". [ You win! ]")
-        return false
+        return false, string(buf[0:length-1])
     }
     if length == 3 && string(buf[0:2]) == "W0" {
         fmt.Println("Got->",string(buf[0:length-1]), ". [ You lose! ]")
-        return false
+        return false, string(buf[0:length-1])
     }
     if length == 3 && string(buf[0:2]) == "W2" {
         fmt.Println("Got->",string(buf[0:length-1]), ". [ Draw tie! ]")
-        return false
+        return false, string(buf[0:length-1])
     }
     if length == 2 && string(buf[0:1]) == "G" {
         fmt.Println("Got->",string(buf[0:length-1]), ". [ Game over! ]")
-        return false
+        os.Exit(0)
+        return false, string(buf[0:length-1])
     }
     if length == 66 {
         fmt.Println("Got->",string(buf[0:length]))
-        print_board(buf[1:length-1])
-        return true
+        printBoard(buf[1:length-1])
+        return true, string(buf[1:length-1])
     }
     if length == 69 { //这种情况是U1和棋盘放在一个TCP包中发过来了
         fmt.Println("Got->",string(buf[0:length]))
-        print_board(buf[4:length-1])
-        return true
+        printBoard(buf[4:length-1])
+        return true, string(buf[4:length-1])
     }
     fmt.Println("Got->",string(buf[0:length]), "len:", length)
-    fmt.Println("FUCK!")
+    fmt.Println("Fuck Something wrong!")
     os.Exit(1)
-    return false
+    return false, ""
 }
 
 //打印棋盘
-func print_board(buf []byte) {
+func printBoard(buf []byte) {
     if len(buf) != 64 {
         fmt.Println("Error board!")
         os.Exit(1)
     }
-    /*
-    fmt.Println("  -------------------");
-    for y := 7; y >= 0 ; y-- {
-        fmt.Printf("%d |", y)
-        for x :=0; x <= 7; x++ {
-            idx := 8*x + y
-            c := string(buf[idx])
-            if(c == "1"){
-                fmt.Print(" W")
-            }else if(c == "2"){
-                fmt.Print(" B")
-            }else{
-                fmt.Print(" *")
-            }
-        }
-        fmt.Print(" |\n")
-    }
-    fmt.Println("  -------------------");
-    fmt.Println("    0 1 2 3 4 5 6 7\n");
-    */
     chessBoard := converBytesToChessBoard(buf)
     PrintChessboard(chessBoard)
 }
@@ -198,7 +238,7 @@ func converBytesToChessBoard(buf []byte) ChessBoard{
 }
 
 /*
- * 将落子行为，转化成Java版server的协议
+ * 将玩家落子行为，转化成Java版server的协议
  * 比如：2F => M56
  */
 func convertPlaceToServerProtocal(line string) (cmd string){
@@ -223,4 +263,26 @@ func convertPlaceToServerProtocal(line string) (cmd string){
 
     cmd = fmt.Sprintf("%c%d%d", ret[0], ret[1], ret[2])
     return cmd
+}
+
+/*
+ * 将AI落子行为，转化成Java版server的协议
+ * 比如：row,col(1,6) => Mxy(M66)
+ *      row,col(0,7) => Mxy(M47)
+ */
+func convertRowColToServerProtocal(row, col int8) (cmd string){
+    //row=>y
+    y := 8 - row -1
+
+    //col=>x
+    x := col
+
+    cmd = fmt.Sprintf("%c%d%d", 'M', x, y)
+    return cmd
+}
+
+//等待用户按任意键，用于阻塞程序
+func waitUser() {
+    r := bufio.NewReader(os.Stdin)
+    _, _, _ = r.ReadLine()
 }
