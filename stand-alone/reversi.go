@@ -200,14 +200,15 @@ func GetScore(chessboard[LENGTH][LENGTH] int8, role int8) (score int8){
     //遍历分析棋盘所有位置
     for row =0; row<LENGTH; row++ {
         for col = 0; col < LENGTH; col++ {
-            //若棋盘对应位置是对手下的棋子，从总分中减1
+            //若棋盘对应位置是地方落的棋子，从总分中减1
             if chessboard[row][col] == opponent_color {
                 score -= 1
             }
-
+            //若棋盘对应位置是我方的棋子，总分中加1分
             if chessboard[row][col] == self_color {
                 score += 1
             }
+            //fmt.Println(row, ":", col, "->", chessboard[row][col], score)
         }
     }
     return
@@ -222,8 +223,16 @@ func GetScore(chessboard[LENGTH][LENGTH] int8, role int8) (score int8){
 //  最优方案的得分
 func FindBestPlayScore(chessboard [LENGTH][LENGTH] int8, canDown [LENGTH][LENGTH] bool, role int8) (maxScore int8) {
     var row, col, i, j, score int8
-
+    //for i =0; i<LENGTH; i++ {
+    //    fmt.Println(chessboard[i])
+    //}
+    //fmt.Println()
+    //for i =0; i<LENGTH; i++ {
+    //    fmt.Println(canDown[i])
+    //}
     var chessboard_tmp [LENGTH][LENGTH] int8
+
+    maxScore = -128 //因为GetScore可能返回负值，所以如果maxScore采用默认0，会导致削平问题
 
     //遍历分析棋盘所有位置
     for row =0; row<LENGTH; row++ {
@@ -243,11 +252,13 @@ func FindBestPlayScore(chessboard [LENGTH][LENGTH] int8, canDown [LENGTH][LENGTH
             //在镜像棋盘中落子，然后求出这种方案的得分
             PlacePiece(&chessboard_tmp, row, col, role)
             score = GetScore(chessboard_tmp, role)
+            //fmt.Println(score, role)
             if maxScore < score {
                 maxScore = score
             }
         }
     }
+    //fmt.Println("Max score:", maxScore)
     return
 }
 
@@ -267,7 +278,7 @@ func AiPlayStep(chessboard *[LENGTH][LENGTH] int8, canDown [LENGTH][LENGTH] bool
 
     //确定本方和对方颜色
     self_color, opponent_color := role, -1*role
-    min_score = 127 //敌方落子的最差的最大值
+    min_score = 127 //敌方落子的最差的最大得分
 
     //遍历分析棋盘所有位置
     for row =0; row<LENGTH; row++ {
@@ -298,6 +309,8 @@ func AiPlayStep(chessboard *[LENGTH][LENGTH] int8, canDown [LENGTH][LENGTH] bool
                 min_score = score;
                 row_best = row;
                 col_best = col;
+                //fmt.Printf("row:%d, col:%d, score:%d\n", row, col, score)
+                //fmt.Println()
             }
         }
     }
@@ -323,6 +336,21 @@ func InitChessboard(chessboard *[8][8] int8) int {
 
     return 4;
 }
+
+//天龙棋局。。。
+//func InitChessboard(chessboard *[8][8] int8) int {
+//    //在棋盘中间位置放置白棋
+//    chessboard[0] = [8]int8{1,1,1,0,0,0,0,0}
+//    chessboard[1] = [8]int8{0,1,1,0,0,0,0,0}
+//    chessboard[2] = [8]int8{0,-1,1,1,0,0,0,0}
+//    chessboard[3] = [8]int8{0,0,-1,1,1,0,0,0}
+//    chessboard[4] = [8]int8{0,0,0,-1,-1,1,0,0}
+//    chessboard[5] = [8]int8{0,0,0,0,-1,-1,1,1}
+//    chessboard[6] = [8]int8{0,0,0,0,0,-1,1,1}
+//    chessboard[7] = [8]int8{0,0,0,0,0,0,0,1}
+//
+//    return 22;
+//}
 
 //等待用户按任意键，用于阻塞程序
 func waitUser() {
@@ -357,7 +385,7 @@ func main() {
         fmt.Println("您执黑先行！")
         user_role = BLACK
     }else if line == "1" {
-        fmt.Print("您执白后行！，请按任意键，AI落子：")
+        fmt.Print("您执白后行！请按任意键，AI落子~")
         waitUser()
         user_role = WIITE
     }else{
@@ -390,7 +418,7 @@ func main() {
             } else {
                 //玩家落子，无限循环等待玩家落下合法子
                 for {
-                    fmt.Print("输入落子的位置(行 列):");
+                    fmt.Print("\n输入落子的位置(行 列):");
                     line, _, _ := r.ReadLine()
                     if len(line) != 2 {
                         fmt.Println("坐标输入错误，请重新输入~")
@@ -414,6 +442,8 @@ func main() {
                 }
                 //fmt.Println(chessboard)
                 PrintChessboard(chessboard)
+                fmt.Print("请按任意键，AI落子~")
+                waitUser()
             }
 
         } else {
@@ -442,4 +472,7 @@ func main() {
 
         turn *= -1 //下一轮反转
     }
+
+    //统计战场的分数
+
 }
