@@ -392,6 +392,10 @@ func main() {
                 for {
                     fmt.Print("输入落子的位置(行 列):");
                     line, _, _ := r.ReadLine()
+                    if len(line) != 2 {
+                        fmt.Println("坐标输入错误，请重新输入~")
+                        continue
+                    }
                     row = int8(line[0] - byte('1'))
                     if line[1] >= byte('a') {
                         col = int8(line[1] - byte('a'))
@@ -399,13 +403,13 @@ func main() {
                         col =int8( line[1] - byte('A'))
                     }
                     //fmt.Println(x, y, len(line))
-                    if row >=0 && row <LENGTH && col >=0 && col <LENGTH && canDown[row][col] && len(line) == 2 {
+                    if row >=0 && row <LENGTH && col >=0 && col <LENGTH && canDown[row][col] {
                        PlacePiece(&chessboard, row, col, user_role) //落子
                         cnt++  //总落子数增加
                         skip_play = 0 //无法落子次数清0
                         break
                     }else{
-                        fmt.Println("坐标输入错误，请重新输入~");
+                        fmt.Println("坐标输入错误，请重新输入~")
                     }
                 }
                 //fmt.Println(chessboard)
