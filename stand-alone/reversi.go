@@ -358,6 +358,27 @@ func waitUser() {
     _, _, _ = r.ReadLine()
 }
 
+//统计棋盘战场的得分
+func countScoreFinally(chessboard[LENGTH][LENGTH] int8, role int8) (user_score, opponent_score int8){
+    var row, col int8
+
+    //确定本方和对方颜色
+    self_color, opponent_color := role, -1*role
+
+    //遍历分析棋盘所有位置
+    for row =0; row<LENGTH; row++ {
+        for col = 0; col < LENGTH; col++ {
+            if chessboard[row][col] == opponent_color {
+                opponent_score ++
+            }
+            if chessboard[row][col] == self_color {
+                user_score ++
+            }
+        }
+    }
+    return
+}
+
 //单机版人机对战
 func main() {
     var row, col int8
@@ -369,8 +390,14 @@ func main() {
     var turn int8 //当前轮到哪一方落子
     r := bufio.NewReader(os.Stdin)
 
-    fmt.Println("\n    ~黑白棋小程序--人机对战AI版~\n")
-    fmt.Println("   初始棋盘:")
+    fmt.Println()
+    fmt.Println("*************************************")
+    fmt.Println("*                                   *")
+    fmt.Println("*    ~黑白棋小程序--人机对战AI版~   *")
+    fmt.Println("*            作者：HQ               *")
+    fmt.Println("*                                   *")
+    fmt.Println("*************************************")
+    fmt.Println("\n 初始棋盘:")
 
     //初始化棋盘
     _ = InitChessboard(&chessboard)
@@ -409,10 +436,10 @@ func main() {
                 //无子可落
                 skip_play ++
                 if skip_play == 1 {
-                    fmt.Print("你目前没有位置可落子，按回车键让对方下子。")
+                    fmt.Println("你目前没有位置可落子，按回车键让对方下子。")
                     waitUser()
                 }else if skip_play == 2 {
-                    fmt.Print("双方均没有可落棋子，按回车键游戏结束")
+                    fmt.Println("双方均没有可落棋子")
                     break
                 }
             } else {
@@ -442,8 +469,8 @@ func main() {
                 }
                 //fmt.Println(chessboard)
                 PrintChessboard(chessboard)
-                fmt.Print("请按任意键，AI落子~")
-                waitUser()
+                fmt.Print("请按任意键，AI落子~\n")
+                //waitUser() //增加交互性
             }
 
         } else {
@@ -454,9 +481,9 @@ func main() {
                 //无子可落
                 skip_play ++
                 if skip_play == 1 {
-                    fmt.Print("AI目前没有位置可落子，请玩家落子。")
+                    fmt.Println("AI目前没有位置可落子，请玩家落子。")
                 }else if skip_play == 2 {
-                    fmt.Print("双方均没有可落棋子，按回车键游戏结束")
+                    fmt.Println("双方均没有可落棋子")
                     break
                 }
             } else {
@@ -474,5 +501,15 @@ func main() {
     }
 
     //统计战场的分数
+    user_score, ai_score := countScoreFinally(chessboard, user_role)
 
+    if user_score < ai_score {
+        fmt.Println("游戏结束，AI获胜")
+    } else if user_score > ai_score {
+        fmt.Println("游戏结束，玩家获胜")
+    } else {
+        fmt.Println("游戏结束，平局")
+    }
+
+    fmt.Println("得分情况----", "玩家：", user_score, "; ", "AI：", ai_score)
 }
