@@ -8,8 +8,12 @@ const (
     BLACK  = -1   //黑子颜色
 )
 
+type ChessBoard [LENGTH][LENGTH]int8
+type CanDown [LENGTH][LENGTH]bool
+
+
 //打印输出棋盘
-func PrintChessboard(chessboard [LENGTH][LENGTH] int8) {
+func PrintChessboard(chessboard ChessBoard) {
     var row, col int
     fmt.Printf("\n  ")
 
@@ -65,7 +69,7 @@ func PrintChessboard(chessboard [LENGTH][LENGTH] int8) {
 //  右上角 -- row=0，col=7
 //  左下角 -- row=7，col=0
 //  右上角 -- row=7，col=7
-func InitChessboard(chessboard *[8][8] int8) int {
+func InitChessboard(chessboard *ChessBoard) int {
     //在棋盘中间位置放置白棋
     chessboard[3][3] = WIITE;
     chessboard[4][4] = WIITE;
@@ -97,7 +101,7 @@ func InitChessboard(chessboard *[8][8] int8) int {
 //
 //注意：
 //golang中数字是值属性，所以要改变内容必须传入指针!
-func PlacePiece(chessboard *[LENGTH][LENGTH] int8, row, col, role int8) {
+func PlacePiece(chessboard *ChessBoard, row, col, role int8) {
     var row_delta, col_delta, x, y int8
     var self_color, opponent_color int8
 

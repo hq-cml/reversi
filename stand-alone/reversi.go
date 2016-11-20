@@ -15,7 +15,7 @@ func waitUser() {
 }
 
 //统计棋盘战场的得分
-func countScoreFinally(chessboard[LENGTH][LENGTH] int8, role int8) (user_score, opponent_score int8){
+func countScoreFinally(chessboard ChessBoard, role int8) (user_score, opponent_score int8){
     var row, col int8
 
     //确定本方和对方颜色
@@ -38,7 +38,7 @@ func countScoreFinally(chessboard[LENGTH][LENGTH] int8, role int8) (user_score, 
 //单机版人机对战
 func main() {
     var row, col int8
-    var chessboard [8][8] int8 //棋盘
+    var chessboard ChessBoard //棋盘
     var cnt int8 //已落子的个数
     var skip_play int8 //当某一方无子可落时，增1，若为2，表示双方都不能落子
     var user_role int8 //玩家颜色：1白色 -1黑色

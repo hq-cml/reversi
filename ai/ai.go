@@ -24,7 +24,7 @@ import (
 //返回值:
 // setp        -- 可下子的位置的个数
 // canDown     -- 可下子的位置
-func CheckChessboard(chessboard[LENGTH][LENGTH] int8, role int8) (step int8, canDown [LENGTH][LENGTH] bool) {
+func CheckChessboard(chessboard ChessBoard, role int8) (step int8, canDown CanDown) {
     var row_delta, col_delta, row, col, x, y int8
     var self_color, opponent_color int8
 
@@ -85,7 +85,7 @@ func CheckChessboard(chessboard[LENGTH][LENGTH] int8, role int8) (step int8, can
 //参数：
 //  chessboard -- 棋盘格局：1白色 -1黑色  0无子
 //  role       -- 1表示分析白子得分 -1表示分析黑子得分
-func GetScore(chessboard[LENGTH][LENGTH] int8, role int8) (score int8){
+func GetScore(chessboard ChessBoard, role int8) (score int8){
     var row, col int8
     var self_color, opponent_color int8
 
@@ -116,7 +116,7 @@ func GetScore(chessboard[LENGTH][LENGTH] int8, role int8) (score int8){
 //  role       -- 1表示分析白子得分 -1表示分析黑子得分
 //返回值：
 //  最优方案的得分
-func FindBestPlayScore(chessboard [LENGTH][LENGTH] int8, canDown [LENGTH][LENGTH] bool, role int8) (maxScore int8) {
+func FindBestPlayScore(chessboard ChessBoard, canDown CanDown, role int8) (maxScore int8) {
     var row, col, i, j, score int8
     //for i =0; i<LENGTH; i++ {
     //    fmt.Println(chessboard[i])
@@ -125,7 +125,7 @@ func FindBestPlayScore(chessboard [LENGTH][LENGTH] int8, canDown [LENGTH][LENGTH
     //for i =0; i<LENGTH; i++ {
     //    fmt.Println(canDown[i])
     //}
-    var chessboard_tmp [LENGTH][LENGTH] int8
+    var chessboard_tmp ChessBoard
 
     maxScore = -128 //因为GetScore可能返回负值，所以如果maxScore采用默认0，会导致削平问题
 
@@ -162,10 +162,10 @@ func FindBestPlayScore(chessboard [LENGTH][LENGTH] int8, canDown [LENGTH][LENGTH
 //  chessboard -- 棋盘格局：1白色 -1黑色  0无子
 //  canDown    -- 可以落子的位置
 //  role       -- 1表示分析白子落子 -1表示分析黑子落子
-func AiPlayStep(chessboard [LENGTH][LENGTH] int8, canDown [LENGTH][LENGTH] bool, role int8) (row_best, col_best int8){
+func AiPlayStep(chessboard ChessBoard, canDown CanDown, role int8) (row_best, col_best int8){
     var row, col, i, j, score, min_score int8
 
-    var chessboard_snap [LENGTH][LENGTH] int8 //棋盘镜像
+    var chessboard_snap ChessBoard //棋盘镜像
     //var canDown_snap [LENGTH][LENGTH] bool   //可落子镜像
 
     //确定本方和对方颜色
