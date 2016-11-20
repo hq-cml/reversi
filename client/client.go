@@ -8,7 +8,7 @@ import (
     "net"
     "sync"
     "runtime"
-    //"time"
+    . "github.com/hq-cml/reversi"
 )
 
 var ip *string = flag.String("h", "127.0.0.1", "ip")
@@ -143,6 +143,7 @@ func print_board(buf []byte) {
         fmt.Println("Error board!")
         os.Exit(1)
     }
+    /*
     fmt.Println("  -------------------");
     for y := 7; y >= 0 ; y-- {
         fmt.Printf("%d |", y)
@@ -161,4 +162,40 @@ func print_board(buf []byte) {
     }
     fmt.Println("  -------------------");
     fmt.Println("    0 1 2 3 4 5 6 7\n");
+    */
+    chessBoard := converStringToChessBoard(buf)
+    PrintChessboard(chessBoard)
+}
+
+/*
+ * 将Java版本的棋盘字符串协议，转化成ChessBoard
+ */
+func converStringToChessBoard(buf []byte) ChessBoard{
+    var chessBoard ChessBoard
+    var cnt int8
+
+    for y := 7; y >= 0 ; y-- {
+        for x :=0; x <= 7; x++ {
+            idx := 8*x + y
+            i := cnt/8
+            j := cnt%8
+            c := string(buf[idx])
+            if(c == "1"){
+                chessBoard[i][j] = WIITE
+            }else if(c == "2"){
+                chessBoard[i][j] = BLACK
+            }else{
+                chessBoard[i][j] = NULL
+            }
+            cnt++
+        }
+    }
+    return chessBoard
+}
+
+/*
+ * 将落子行为，转化成Java版server的协议
+ */
+func convertPlaceToServerProtocal() {
+
 }

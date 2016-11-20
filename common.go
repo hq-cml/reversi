@@ -6,11 +6,11 @@ const (
     LENGTH = 8    //棋盘长宽
     WIITE  = 1    //白子颜色
     BLACK  = -1   //黑子颜色
+    NULL   = 0    //空子
 )
 
 type ChessBoard [LENGTH][LENGTH]int8
 type CanDown [LENGTH][LENGTH]bool
-
 
 //打印输出棋盘
 func PrintChessboard(chessboard ChessBoard) {

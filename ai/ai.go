@@ -62,7 +62,7 @@ func CheckChessboard(chessboard ChessBoard, role int8) (step int8, canDown CanDo
                                 break
                             }
                             //如果找到了空位置，则也说明无法落子了
-                            if chessboard[x][y] == 0 {
+                            if chessboard[x][y] == NULL {
                                 break
                             }
                             //如果找到了本方棋子，则说明可以形成合围
