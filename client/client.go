@@ -13,6 +13,7 @@ import (
 
 var ip *string = flag.String("h", "127.0.0.1", "ip")
 var port *int = flag.Int("p", 9527, "port")
+var ai *ai = flag.Int("a", 0, "port")       //0-手动模式 1-AI自动模式
 
 func checkError(err error) {
     if err != nil {
@@ -86,7 +87,10 @@ func std_in(conn net.Conn, user_input chan byte) {
             break
         }
 
-        _, e := conn.Write([]byte(line))
+        //将用户指令转化成Server指令
+        cmd := convertPlaceToServerProtocal(line)
+
+        _, e := conn.Write([]byte(cmd))
         //fmt.Println("write len:", n)
         checkError(e)
         //runtime.Gosched()
@@ -163,29 +167,29 @@ func print_board(buf []byte) {
     fmt.Println("  -------------------");
     fmt.Println("    0 1 2 3 4 5 6 7\n");
     */
-    chessBoard := converStringToChessBoard(buf)
+    chessBoard := converBytesToChessBoard(buf)
     PrintChessboard(chessBoard)
 }
 
 /*
  * 将Java版本的棋盘字符串协议，转化成ChessBoard
  */
-func converStringToChessBoard(buf []byte) ChessBoard{
+func converBytesToChessBoard(buf []byte) ChessBoard{
     var chessBoard ChessBoard
     var cnt int8
 
     for y := 7; y >= 0 ; y-- {
         for x :=0; x <= 7; x++ {
             idx := 8*x + y
-            i := cnt/8
-            j := cnt%8
+            row := cnt/8
+            col := cnt%8
             c := string(buf[idx])
             if(c == "1"){
-                chessBoard[i][j] = WIITE
+                chessBoard[row][col] = WIITE
             }else if(c == "2"){
-                chessBoard[i][j] = BLACK
+                chessBoard[row][col] = BLACK
             }else{
-                chessBoard[i][j] = NULL
+                chessBoard[row][col] = NULL
             }
             cnt++
         }
@@ -195,7 +199,28 @@ func converStringToChessBoard(buf []byte) ChessBoard{
 
 /*
  * 将落子行为，转化成Java版server的协议
+ * 比如：2F => M56
  */
-func convertPlaceToServerProtocal() {
+func convertPlaceToServerProtocal(line string) (cmd string){
+    var ret [3]byte
 
+    //如果N开头，是报家门，则直接返回
+    if []byte(line)[0] == 'N' {
+        return line
+    }
+
+    if len(line) != 2 {
+        return ""
+    }
+
+    ret[0] = 'M'
+    if line[1] >= byte('a') {
+        ret[1] = byte(line[1]) - byte('a')
+    } else {
+        ret[1] = byte(line[1]) - byte('A')
+    }
+    ret[2] = LENGTH - (byte(line[0])-byte('0'))
+
+    cmd = fmt.Sprintf("%c%d%d", ret[0], ret[1], ret[2])
+    return cmd
 }
