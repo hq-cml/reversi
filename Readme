@@ -1,5 +1,17 @@
-Client_JAVA is a client demo written in JAVA.
-Protocol contains a README file which will tell you how to connect to the server.
-Server is the server binary file in JAVA.
+黑白棋：
+    又叫翻转棋（Reversi）、奥赛罗棋（Othello）、苹果棋或反棋（Anti reversi）。黑白棋在西方和日本很流行。游戏通过相互翻转对方的棋子，最后以棋盘上谁的棋子多来判断胜负。它的游戏规则简单，因此上手很容易，但是它的变化又非常复杂。有一种说法是：只需要几分钟学会它，却需要一生的时间去精通它。
+
+    黑白棋是19世纪末英国人发明的。直到上个世纪70年代日本人长谷川五郎将其进行发展和推广，借用莎士比亚名剧奥赛罗（othello)为这个游戏重新命名（日语“オセロ”），也就是现在大家玩的黑白棋。为何借用莎士比亚名剧呢？是因为奥赛罗是莎士比亚一个名剧的男主角。他是一个黑人，妻子是白人，因受小人挑拨，怀疑妻子不忠一直情海翻波，最终亲手把妻子杀死。后来真相大白，奥赛罗懊悔不已，自杀而死。黑白棋就是借用这个黑人白人斗争的故事而命名。
+
+目录：
+ai：一个简单的人工智能，采用Min-Max算法，自动计算行棋
+
+binary_java：一个已经成型的网络对战框架
+    Protocol contains a README file which will tell you how to connect to the server.
+    Client_JAVA is a client demo written in JAVA.
+    Server is the server binary file in JAVA.
+
+client：golang实现的客户端，用于和binary_java交互，可以支持手动落子模式和Ai自动落子模式
+stand-alone：golang实现的单机版人机对战黑白棋
 
 If you have any questions please contact hq-cml@163.com.
